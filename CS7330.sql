@@ -11,6 +11,16 @@ name varchar(60) not null,
 seniority enum('newbie', 'junior', 'senior')
 );
 
+DELIMITER //
+create trigger check_id before insert on people for each row
+begin
+	if(new.ID <10000 OR new.ID > 99999) then
+    SIGNAL SQLSTATE '45000'
+    SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'ID must be 5-digit';
+    end if;
+end //
+DELIMITER ;
+
 create table components(
 cName varchar(60) not null,
 cVersion varchar(3) not null,
