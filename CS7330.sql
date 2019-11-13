@@ -14,7 +14,7 @@ seniority enum('newbie', 'junior', 'senior')
 DELIMITER //
 create trigger check_id before insert on people for each row
 begin
-	if(new.ID <10000 OR new.ID > 99999) then
+	if(new.ID not between 10000 AND 99999) then
     SIGNAL SQLSTATE '45000'
     SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'ID must be 5-digit';
     end if;
@@ -47,5 +47,27 @@ date date not null,
 score integer not null,
 texture_description varchar(100)
 );
+
+Delimiter //
+create trigger get_score after insert on peerReview for each row
+begin
+	if(new.score between 91 and 100) then
+		update components c
+		set c.status = 'ready'
+		where c.cName = new.cName AND c.cVersion = new.cVersion;
+	elseif(new.score between 75 and 90) then
+		update components c
+		set c.status = 'usable'
+        where c.cName = new.cName AND c.cVersion = new.cVersion;
+	elseif(new.score between 1 and 75) then
+		update components c
+        set c.status = 'not-ready'
+		where c.cName = new.cName AND c.cVersion = new.cVersion;
+	else
+		SIGNAL SQLSTATE '45000'
+        SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
+	end if;
+end //
+Delimiter ;
 
     
