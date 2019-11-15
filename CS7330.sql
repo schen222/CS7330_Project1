@@ -72,3 +72,24 @@ begin
 	end if;
 end //
 Delimiter ;
+
+Delimiter //
+	create trigger get_seniority after insert on people for each row
+    begin
+		DECLARE datediff int;
+		set datediff = DATEDIFF(CURRENT_DATE(), new.hireDate);
+		if(datediff < 365) then
+			update people p
+            set p.seniority = 'newbie'
+            where ID = new.ID;
+		elseif(datediff between 365 and 1824) then
+			update people p
+            set p.seniority = 'junior'
+            where ID = new.ID;
+		elseif(datediff > 1825) then
+			update people p 
+            set p.seniority = 'senior'
+            where ID = new.ID;
+		end if;
+	end //
+Delimiter ;
