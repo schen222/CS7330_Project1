@@ -18,7 +18,7 @@ create table components(
 cName varchar(60) not null,
 cVersion varchar(3) not null,
 size varchar(20) not null,
-language varchar(20) not null,
+language enum('C','C++','C#','Java','PHP', 'Python', 'assembly'),
 cStatus enum('ready', 'usable', 'not-ready'),
 Owner integer references people(ID),
 primary key(cName, cVersion)
