@@ -1,10 +1,11 @@
+drop table if exists product;
 create table product(
 pName varchar(60) not null,
 pVersion varchar(20) not null,
-pStatus varchar(20),
 primary key(pName, pVersion)
 );
 
+drop table if exists people;
 create table people(
 ID integer not null primary key,
 name varchar(60) not null,
@@ -13,7 +14,7 @@ seniority varchar(6),
 Mgr integer references people(ID)
 );
 
-
+drop table if exists components;
 create table components(
 cName varchar(60) not null,
 cVersion varchar(3) not null,
@@ -24,6 +25,7 @@ Owner integer references people(ID),
 primary key(cName, cVersion)
 );
 
+drop table if exists build;
 create table build(
 pName varchar(60) references product(pName),
 pVersion varchar(20) references product(pVersion),
@@ -32,6 +34,7 @@ cVersion varchar(3) references components(cVersion),
 primary key(pName, pVersion, cName, cVersion)
 );
 
+drop table if exists peerReview;
 create table peerReview(
 byWho integer references people(ID),
 cName varchar(60) references components(cName),
@@ -73,23 +76,34 @@ begin
 end //
 Delimiter ;
 
+drop trigger if exists get_seniority;
 Delimiter //
-	create trigger get_seniority after insert on people for each row
+	create trigger get_seniority before insert on people for each row
     begin
 		DECLARE datediff int;
 		set datediff = DATEDIFF(CURRENT_DATE(), new.hireDate);
 		if(datediff < 365) then
-			update people p
-            set p.seniority = 'newbie'
-            where ID = new.ID;
+            set new.seniority = 'newbie';
 		elseif(datediff between 365 and 1824) then
-			update people p
-            set p.seniority = 'junior'
-            where ID = new.ID;
+            set new.seniority = 'junior';
 		elseif(datediff > 1825) then
-			update people p 
-            set p.seniority = 'senior'
-            where ID = new.ID;
+            set new.seniority = 'senior';
 		end if;
 	end //
 Delimiter ;
+
+insert into product values
+('Excel','2010'),
+('Excel','2015'),
+('Excel','2018bata'),
+('Excel','secret');
+
+insert into people (ID,name,hireDate,Mgr) values
+(10100,'Employee-1','1984-11-08',null),
+(10200,'Employee-2','1994-11-08',10100),
+(10300,'Employee-3','2004-11-08',10200),
+(10400,'Employee-4','2013-11-01',10200),
+(10500,'Employee-5','2017-11-01',10400),
+(10600,'Employee-6','2017-11-01',10400),
+(10700,'Employee-7','2018-11-01',10400),
+(10800,'Employee-8','2019-11-01',10200);
