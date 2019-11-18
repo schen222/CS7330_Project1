@@ -16,34 +16,34 @@ Mgr integer references people(ID)
 
 drop table if exists components;
 create table components(
+number integer not null primary key,
 cName varchar(60) not null,
 cVersion varchar(3) not null,
 size varchar(20) not null,
 language enum('C','C++','C#','Java','PHP', 'Python', 'assembly'),
 cStatus enum('ready', 'usable', 'not-ready'),
-Owner integer references people(ID),
-primary key(cName, cVersion)
+Owner integer references people(ID)
 );
 
 drop table if exists build;
 create table build(
 pName varchar(60) references product(pName),
 pVersion varchar(20) references product(pVersion),
-cName varchar(60) references components(cName),
-cVersion varchar(3) references components(cVersion),
-primary key(pName, pVersion, cName, cVersion)
+cNumber integer references components(number),
+primary key(pName, pVersion, cNumber)
 );
 
 drop table if exists peerReview;
 create table peerReview(
 byWho integer references people(ID),
-cName varchar(60) references components(cName),
-cVersion varchar(3) references components(cVersion),
+cNumber integer references components(number),
 date date not null,
 score integer not null,
-texture_description varchar(500)
+texture_description varchar(500),
+primary key(byWho,cNumber)
 );
 
+drop trigger if exists check_id;
 DELIMITER //
 create trigger check_id before insert on people for each row
 begin
@@ -54,6 +54,7 @@ begin
 end //
 DELIMITER ;
 
+drop trigger if exists get_score;
 Delimiter //
 create trigger get_score after insert on peerReview for each row
 begin
@@ -107,3 +108,27 @@ insert into people (ID,name,hireDate,Mgr) values
 (10600,'Employee-6','2017-11-01',10400),
 (10700,'Employee-7','2018-11-01',10400),
 (10800,'Employee-8','2019-11-01',10200);
+
+insert into components (number,cName,cVersion,size,language,Owner) values
+(1,'Keyboard Driver','K11','1200','C',10100),
+(2,'Touch Screen Driver','A01','4000','C++',10100),
+(3,'Dbase Interface','D00','2500','C++',10200),
+(4,'Dbase Interface','D01','2500','C++',10300),
+(5,'Chart generator','C11','6500','Java',10200),
+(6,'Pen driver','P01','3575','C',10700),
+(7,'Math unit','A01','5000','C',10200),
+(8,'Math unit','A02','3500','Java',10200);
+
+insert into build values
+('Excel','2010',1),
+('Excel','2010',3),
+('Excel','2015',1),
+('Excel','2015',4),
+('Excel','2015',6),
+('Excel','2018bata',1),
+('Excel','2018bata',2),
+('Excel','2018bata',5),
+('Excel','secret',1),
+('Excel','secret',2),
+('Excel','secret',5),
+('Excel','secret',8);
