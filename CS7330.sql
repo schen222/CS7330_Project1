@@ -35,12 +35,12 @@ primary key(pName, pVersion, cNumber)
 
 drop table if exists peerReview;
 create table peerReview(
-byWho integer references people(ID),
-cNumber integer references components(number),
+cNum integer references components(number),
 date date not null,
+byWho integer references people(ID),
 score integer not null,
 texture_description varchar(500),
-primary key(byWho,cNumber)
+primary key(byWho,cNum,date)
 );
 
 drop trigger if exists check_id;
@@ -59,17 +59,17 @@ Delimiter //
 create trigger get_score after insert on peerReview for each row
 begin
 	if(new.score between 91 and 100) then
-		update components c
-		set c.status = 'ready'
-		where c.cName = new.cName AND c.cVersion = new.cVersion;
+		update components
+		set cStatus = 'ready'
+		where number = new.cNum;
 	elseif(new.score between 75 and 90) then
-		update components c
-		set c.status = 'usable'
-        where c.cName = new.cName AND c.cVersion = new.cVersion;
+		update components
+		set cStatus = 'usable'
+        where number = new.cNum;
 	elseif(new.score between 1 and 75) then
-		update components c
-        set c.status = 'not-ready'
-		where c.cName = new.cName AND c.cVersion = new.cVersion;
+		update components 
+        set cStatus = 'not-ready'
+		where number = new.cNum;
 	else
 		SIGNAL SQLSTATE '45000'
         SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
@@ -132,3 +132,19 @@ insert into build values
 ('Excel','secret',2),
 ('Excel','secret',5),
 ('Excel','secret',8);
+
+insert into peerReview values
+(1,'2012-02-14',10100,100,'legacy code which is already approved'),
+(2,'2019-06-01',10200,95,'initial release ready for usage'),
+(3,'2012-02-22',10100,55,'too many hard coded parameters, the software must be more maintainable and configurable because we want to use this in other products.'),
+(3,'2012-02-24',10100,78,'improved, but only handles DB2 format'),
+(3,'2012-02-26',10100,95,'Okay,handles DB3 format.'),
+(3,'2012-02-28',10100,100,'okay, fixed input flexibility routine'),
+(4,'2013-05-01',10200,100,'Okay, ready for use'),
+(6,'2019-07-15',10300,80,'Okay, ready for beta testing'),
+(7,'2016-06-10',10100,90,'almost ready, potential buffer overflow'),
+(8,'2016-06-15',10100,70,'Accuracy problems!'),
+(8,'2016-06-30',10100,100,'Okay problems fixed'),
+(8,'2016-11-02',10700,100,'re-review for new employee to gain experience in the process.');
+
+select * from components;
