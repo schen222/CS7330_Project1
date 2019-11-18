@@ -30,8 +30,9 @@ drop table if exists build;
 create table build(
 pName varchar(60) references product(pName),
 pVersion varchar(20) references product(pVersion),
-cNumber integer references components(number),
-primary key(pName, pVersion, cNumber)
+cName varchar(60) references components(cName),
+cVersion varchar(3) references components(cVersion),
+primary key(pName, pVersion, cName, cVersion)
 );
 
 drop table if exists peerReview;
@@ -42,7 +43,7 @@ date date not null,
 byWho integer references people(ID),
 score integer not null,
 texture_description varchar(500),
-primary key(byWho,cNum,date)
+primary key(cName,cVersion,date)
 );
 
 drop trigger if exists check_id;
@@ -122,18 +123,18 @@ insert into components (number,cName,cVersion,size,language,Owner) values
 (8,'Math unit','A02','3500','Java',10200);
 
 insert into build values
-('Excel','2010',1),
-('Excel','2010',3),
-('Excel','2015',1),
-('Excel','2015',4),
-('Excel','2015',6),
-('Excel','2018bata',1),
-('Excel','2018bata',2),
-('Excel','2018bata',5),
-('Excel','secret',1),
-('Excel','secret',2),
-('Excel','secret',5),
-('Excel','secret',8);
+('Excel','2010','Keyboard Driver','K11'),
+('Excel','2010','Dbase Interface','D00'),
+('Excel','2015','Keyboard Driver','K11'),
+('Excel','2015','Dbase Interface','D01'),
+('Excel','2015','Pen driver','P01'),
+('Excel','2018bata','Keyboard Driver','K11'),
+('Excel','2018bata','Touch Screen Driver','A01'),
+('Excel','2018bata','Chart generator','C11'),
+('Excel','secret','Keyboard Driver','K11'),
+('Excel','secret','Touch Screen Driver','A01'),
+('Excel','secret','Chart generator','C11'),
+('Excel','secret','Math unit','A02');
 
 insert into peerReview values
 ('Keyboard Driver','K11','2012-02-14',10100,100,'legacy code which is already approved'),
@@ -148,4 +149,3 @@ insert into peerReview values
 ('Math unit','A02','2016-06-15',10100,70,'Accuracy problems!'),
 ('Math unit','A02','2016-06-30',10100,100,'Okay problems fixed'),
 ('Math unit','A02','2016-11-02',10700,100,'re-review for new employee to gain experience in the process.');
-
