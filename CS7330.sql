@@ -16,13 +16,14 @@ Mgr integer references people(ID)
 
 drop table if exists components;
 create table components(
-number integer not null primary key,
+number integer not null,
 cName varchar(60) not null,
 cVersion varchar(3) not null,
 size varchar(20) not null,
 language enum('C','C++','C#','Java','PHP', 'Python', 'assembly'),
 cStatus enum('ready', 'usable', 'not-ready'),
-Owner integer references people(ID)
+Owner integer references people(ID),
+primary key(cName, cVersion)
 );
 
 drop table if exists build;
@@ -35,7 +36,8 @@ primary key(pName, pVersion, cNumber)
 
 drop table if exists peerReview;
 create table peerReview(
-cNum integer references components(number),
+cName varchar(60) references components(cName),
+cVersion varchar(3) references components(cVersion),
 date date not null,
 byWho integer references people(ID),
 score integer not null,
@@ -61,15 +63,15 @@ begin
 	if(new.score between 91 and 100) then
 		update components
 		set cStatus = 'ready'
-		where number = new.cNum;
+		where cName = new.cName and cVersion = new.cVersion;
 	elseif(new.score between 75 and 90) then
 		update components
 		set cStatus = 'usable'
-        where number = new.cNum;
+        where cName = new.cName and cVersion = new.cVersion;
 	elseif(new.score between 1 and 75) then
 		update components 
         set cStatus = 'not-ready'
-		where number = new.cNum;
+		where cName = new.cName and cVersion = new.cVersion;
 	else
 		SIGNAL SQLSTATE '45000'
         SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
@@ -134,17 +136,16 @@ insert into build values
 ('Excel','secret',8);
 
 insert into peerReview values
-(1,'2012-02-14',10100,100,'legacy code which is already approved'),
-(2,'2019-06-01',10200,95,'initial release ready for usage'),
-(3,'2012-02-22',10100,55,'too many hard coded parameters, the software must be more maintainable and configurable because we want to use this in other products.'),
-(3,'2012-02-24',10100,78,'improved, but only handles DB2 format'),
-(3,'2012-02-26',10100,95,'Okay,handles DB3 format.'),
-(3,'2012-02-28',10100,100,'okay, fixed input flexibility routine'),
-(4,'2013-05-01',10200,100,'Okay, ready for use'),
-(6,'2019-07-15',10300,80,'Okay, ready for beta testing'),
-(7,'2016-06-10',10100,90,'almost ready, potential buffer overflow'),
-(8,'2016-06-15',10100,70,'Accuracy problems!'),
-(8,'2016-06-30',10100,100,'Okay problems fixed'),
-(8,'2016-11-02',10700,100,'re-review for new employee to gain experience in the process.');
+('Keyboard Driver','K11','2012-02-14',10100,100,'legacy code which is already approved'),
+('Touch Screen Driver','A01','2019-06-01',10200,95,'initial release ready for usage'),
+('Dbase Interface','D00','2012-02-22',10100,55,'too many hard coded parameters, the software must be more maintainable and configurable because we want to use this in other products.'),
+('Dbase Interface','D00','2012-02-24',10100,78,'improved, but only handles DB2 format'),
+('Dbase Interface','D00','2012-02-26',10100,95,'Okay,handles DB3 format.'),
+('Dbase Interface','D00','2012-02-28',10100,100,'okay, fixed input flexibility routine'),
+('Dbase Interface','D01','2013-05-01',10200,100,'Okay, ready for use'),
+('Pen driver','P01','2019-07-15',10300,80,'Okay, ready for beta testing'),
+('Math unit','A01','2016-06-10',10100,90,'almost ready, potential buffer overflow'),
+('Math unit','A02','2016-06-15',10100,70,'Accuracy problems!'),
+('Math unit','A02','2016-06-30',10100,100,'Okay problems fixed'),
+('Math unit','A02','2016-11-02',10700,100,'re-review for new employee to gain experience in the process.');
 
-select * from components;
