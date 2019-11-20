@@ -5,6 +5,6 @@ From Assignment "Our Software Factory develops various software products, each o
 
 ## What I need to do
 1) Create tables (Done)
-2) Create triggers for each requirement (Working on)
-3) Make adjustments after given a list of application requirements
+2) Create triggers for each requirement (Done)
+3) Make adjustments after given a list of application requirements (Working on)
 4) Test code
