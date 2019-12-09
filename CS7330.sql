@@ -2,6 +2,7 @@ drop table if exists product;
 create table product(
 pName varchar(60) not null,
 pVersion varchar(20) not null,
+pStatus enum('ready', 'usable', 'not-ready'),
 primary key(pName, pVersion)
 );
 
@@ -61,22 +62,95 @@ drop trigger if exists get_score;
 Delimiter //
 create trigger get_score after insert on peerReview for each row
 begin
-	if(new.score between 91 and 100) then
-		update components
-		set cStatus = 'ready'
-		where cName = new.cName and cVersion = new.cVersion;
-	elseif(new.score between 75 and 90) then
-		update components
-		set cStatus = 'usable'
-        where cName = new.cName and cVersion = new.cVersion;
-	elseif(new.score between 1 and 75) then
-		update components 
-        set cStatus = 'not-ready'
-		where cName = new.cName and cVersion = new.cVersion;
-	else
-		SIGNAL SQLSTATE '45000'
-        SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
+	declare productStatus varchar(10);
+    declare productName varchar(60);
+    declare productVersion varchar(20);    
+	declare finished int default false;
+    declare curProduct
+		cursor for
+            select p.pStatus, p.pName, p.pVersion
+            from product as p join build as b on (p.pName = b.pName and p.pVersion = b.pVersion)
+            join peerReview as p1 on (b.cName = p1.cName and b.cVersion = p1.cVersion)
+            where p1.cName = new.cName and p1.cVersion = new.cVersion;	
+	DECLARE CONTINUE HANDLER FOR NOT FOUND SET finished = true;	
+    open curProduct;    
+    getStatus: loop
+    fetch curProduct into productStatus,productName,productVersion;
+    if finished then
+		leave getStatus;
 	end if;
+    if(productStatus is null) then
+		if(new.score between 91 and 100) then
+			update components
+			set cStatus = 'ready'
+			where cName = new.cName and cVersion = new.cVersion;            
+            update product
+            set pStatus = 'ready'
+            where pName = productName and pVersion = productVersion;            
+		elseif(new.score between 75 and 90) then        
+			update components
+			set cStatus = 'usable'
+			where cName = new.cName and cVersion = new.cVersion;            
+            update product
+            set pStatus = 'usable'
+            where pName = productName and pVersion = productVersion;            
+		elseif(new.score between 1 and 75) then        
+			update components 
+			set cStatus = 'not-ready'
+			where cName = new.cName and cVersion = new.cVersion;            
+            update product
+            set pStatus = 'not-ready'
+            where pName = productName and pVersion = productVersion;            
+		else
+			SIGNAL SQLSTATE '45000'
+			SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
+		end if;        
+    elseif(productStatus = 'ready') then
+		if(new.score between 91 and 100) then
+			update components
+			set cStatus = 'ready'
+			where cName = new.cName and cVersion = new.cVersion;            
+		elseif(new.score between 75 and 90) then        
+			update components
+			set cStatus = 'usable'
+			where cName = new.cName and cVersion = new.cVersion;            
+            update product
+            set pStatus = 'usable'
+            where pName = productName and pVersion = productVersion;            
+		elseif(new.score between 1 and 75) then        
+			update components 
+			set cStatus = 'not-ready'
+			where cName = new.cName and cVersion = new.cVersion;
+            update product
+            set pStatus = 'not-ready'
+            where pName = productName and pVersion = productVersion;		
+        else
+			SIGNAL SQLSTATE '45000'
+			SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
+		end if;
+	elseif(productStatus = 'usable') then
+		if(new.score between 91 and 100) then
+			update components
+			set cStatus = 'ready'
+			where cName = new.cName and cVersion = new.cVersion;            
+		elseif(new.score between 75 and 90) then
+			update components
+			set cStatus = 'usable'
+			where cName = new.cName and cVersion = new.cVersion;            
+		elseif(new.score between 1 and 75) then        
+			update components 
+			set cStatus = 'not-ready'
+			where cName = new.cName and cVersion = new.cVersion;
+            update product
+            set pStatus = 'not-ready'
+            where pName = productName and pVersion = productVersion;		
+        else
+			SIGNAL SQLSTATE '45000'
+			SET MYSQL_ERRNO = 30001, MESSAGE_TEXT = 'Your input is out of range';
+		end if;
+     end if ;
+    end loop;    
+    close curProduct;
 end //
 Delimiter ;
 
@@ -96,12 +170,14 @@ Delimiter //
 	end //
 Delimiter ;
 
-insert into product values
+truncate product;
+insert into product(pName,pVersion) values
 ('Excel','2010'),
 ('Excel','2015'),
 ('Excel','2018bata'),
 ('Excel','secret');
 
+truncate people;
 insert into people (ID,name,hireDate,Mgr) values
 (10100,'Employee-1','1984-11-08',null),
 (10200,'Employee-2','1994-11-08',10100),
@@ -112,6 +188,7 @@ insert into people (ID,name,hireDate,Mgr) values
 (10700,'Employee-7','2018-11-01',10400),
 (10800,'Employee-8','2019-11-01',10200);
 
+truncate components;
 insert into components (number,cName,cVersion,size,language,Owner) values
 (1,'Keyboard Driver','K11','1200','C',10100),
 (2,'Touch Screen Driver','A01','4000','C++',10100),
@@ -122,6 +199,7 @@ insert into components (number,cName,cVersion,size,language,Owner) values
 (7,'Math unit','A01','5000','C',10200),
 (8,'Math unit','A02','3500','Java',10200);
 
+truncate build;
 insert into build values
 ('Excel','2010','Keyboard Driver','K11'),
 ('Excel','2010','Dbase Interface','D00'),
@@ -136,6 +214,7 @@ insert into build values
 ('Excel','secret','Chart generator','C11'),
 ('Excel','secret','Math unit','A02');
 
+truncate peerReview;
 insert into peerReview values
 ('Keyboard Driver','K11','2012-02-14',10100,100,'legacy code which is already approved'),
 ('Touch Screen Driver','A01','2019-06-01',10200,95,'initial release ready for usage'),
